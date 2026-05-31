@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oscillator Parameters Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 25px;
+        }
+        .input-group {
+            margin-bottom: 25px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        input[type=range] {
+            flex-grow: 1;
+            cursor: pointer;
+        }
+        input[type=number] {
+            width: 70px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .output-group {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px dashed #e1e4e8;
+        }
+        .result {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 1.25em;
+        }
+        .result .label {
+            color: #666;
+            font-weight: 500;
+        }
+        .result .value {
+            font-weight: bold;
+            color: #0056b3;
+            background: #e6f2ff;
+            padding: 5px 15px;
+            border-radius: 6px;
+            min-width: 80px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Oscillator Calculator</h2>
+
+    <div class="input-group">
+        <label for="cext">Cext (pF) [0 to 100]:</label>
+        <div class="controls">
+            <input type="range" id="cext-slider" min="0" max="100" step="1" value="0">
+            <input type="number" id="cext-number" min="0" max="100" step="1" value="0">
+        </div>
+    </div>
+
+    <div class="input-group">
+        <label for="df">Δf (Hz) [-200 to 200]:</label>
+        <div class="controls">
+            <input type="range" id="df-slider" min="-200" max="200" step="1" value="0">
+            <input type="number" id="df-number" min="-200" max="200" step="1" value="0">
+        </div>
+    </div>
+
+    <div class="output-group">
+        <div class="result">
+            <span class="label">U2 (mV)</span>
+            <span class="value" id="out-u2">0.0</span>
+        </div>
+        <div class="result">
+            <span class="label">Δt (ns)</span>
+            <span class="value" id="out-delt">0</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Minimal Complex Number Class for JS implementation of your Python math
+    class Complex {
+        constructor(re, im) {
+            this.re = re;
+            this.im = im;
+        }
+        add(other) {
+            if (typeof other === 'number') return new Complex(this.re + other, this.im);
+            return new Complex(this.re + other.re, this.im + other.im);
+        }
+        mul(other) {
+            if (typeof other === 'number') return new Complex(this.re * other, this.im * other);
+            return new Complex(this.re * other.re - this.im * other.im, this.re * other.im + this.im * other.re);
+        }
+        div(other) {
+            if (typeof other === 'number') return new Complex(this.re / other, this.im / other);
+            const denom = other.re * other.re + other.im * other.im;
+            return new Complex(
+                (this.re * other.re + this.im * other.im) / denom,
+                (this.im * other.re - this.re * other.im) / denom
+            );
+        }
+        mag() {
+            return Math.sqrt(this.re * this.re + this.im * this.im);
+        }
+    }
+
+    // Constants from your Python code
+    const R0 = 5.1e3;
+    const C0 = 53.9e-12;
+    const R = 199;
+    const L = 1.20;
+    const C = 5.2775e-15;
+    const V0 = 500;
+
+    const Ws = Math.sqrt(1 / (L * C));
+    const a = R / L;
+
+    // Main Calculation Function
+    function calculate(Cext_pF, df_Hz) {
+        const Cext = Cext_pF * 1e-12;
+        const Wp = Math.sqrt((1 + C / (C0 + Cext)) / (L * C));
+        const f = 2e6 + df_Hz;
+        const W = 2 * Math.PI * f;
+
+        // Z = (Ws**2 - W**2 + 1j*W*a) / (1j*W*C0*(Wp**2 - W**2 + 1j*W*a))
+        const Z_num = new Complex(Ws * Ws - W * W, W * a);
+        const Z_den_bracket = new Complex(Wp * Wp - W * W, W * a);
+        const jWC0 = new Complex(0, W * C0);
+        const Z_den = jWC0.mul(Z_den_bracket);
+        
+        const Z = Z_num.div(Z_den);
+
+        // V2 = V0 * (Z / (Z + R0))
+        const Z_plus_R0 = Z.add(R0);
+        const ratio = Z.div(Z_plus_R0);
+        const V2 = ratio.mul(V0);
+
+        // Calculate (V0/V2)
+        const V0_c = new Complex(V0, 0);
+        const V0_over_V2 = V0_c.div(V2);
+
+        // phi = math.atan((V0/V2).imag / (V0/V2).real)
+        const phi = Math.atan(V0_over_V2.im / V0_over_V2.re);
+        
+        // del_t = phi / W * 1e9 
+        const del_t = (phi / W) * 1e9;
+
+        return {
+            U2: V2.mag(),
+            del_t: del_t
+        };
+    }
+
+    // UI Elements
+    const cextSlider = document.getElementById('cext-slider');
+    const cextNumber = document.getElementById('cext-number');
+    const dfSlider = document.getElementById('df-slider');
+    const dfNumber = document.getElementById('df-number');
+    const outU2 = document.getElementById('out-u2');
+    const outDelt = document.getElementById('out-delt');
+
+    // Update Data
+    function updateOutputs() {
+        let cext = parseFloat(cextNumber.value);
+        let df = parseFloat(dfNumber.value);
+        
+        // Fallback for empty/invalid typing
+        if (isNaN(cext)) cext = 0;
+        if (isNaN(df)) df = 0;
+
+        const res = calculate(cext, df);
+        
+        // Apply python's formatting: U2 is 1 decimal, del_t is 0 decimals
+        outU2.textContent = res.U2.toFixed(1);
+        
+        let roundedDelT = Math.round(res.del_t);
+        // Correct behavior for -0 vs 0
+        if(Object.is(roundedDelT, -0)) roundedDelT = 0; 
+        outDelt.textContent = roundedDelT.toString();
+    }
+
+    // Sync input blocks (Slider <-> Number Field)
+    function sync(source, target) {
+        target.value = source.value;
+        updateOutputs();
+    }
+
+    // Event Listeners
+    cextSlider.addEventListener('input', () => sync(cextSlider, cextNumber));
+    cextNumber.addEventListener('input', () => sync(cextNumber, cextSlider));
+    dfSlider.addEventListener('input', () => sync(dfSlider, dfNumber));
+    dfNumber.addEventListener('input', () => sync(dfNumber, dfSlider));
+
+    // Run initial calculation at startup
+    updateOutputs();
+</script>
+</body>
+</html>
