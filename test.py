@@ -25,8 +25,8 @@ def range_input(text, low, high):
     return int(inpt)
     
 #main
-'''
-with open("demon.csv", "w") as filee:
+
+with open("../demon.csv", "w") as filee:
     filee.write("del_f(Hz)")
     filee.write(",")
     filee.write("V2(mV)")
@@ -40,8 +40,10 @@ with open("demon.csv", "w") as filee:
     filee.write("phifake")
     filee.write(",")
     filee.write("Zfake")
+    filee.write(",")
+    filee.write("Z2")
     filee.write("\n")
-'''
+
 print("-------------------------------------------------------------------------------------------------------------------")
 while True:
     print("=======")
@@ -61,7 +63,7 @@ while True:
     print("========")
     print("U2 (mV):", "{:.1f}".format(abs(V2)))
     print("Δt (ns):", "{:.0f}".format(del_t))
-    '''
+    
     print()
     print("========")
     print(" SECRET ")
@@ -70,19 +72,20 @@ while True:
     print("f_anti:",Ws/(2*math.pi)-2e6)
     print("|Z|:", abs(Z))
     print("phi:", phi)
-    '''
+    
     print("-------------------------------------------------------------------------------------------------------------------")
-    '''
+    
     for i in range(-200,201):
         f = 2e6 + i
         W = 2*math.pi*f
         Z = (Ws**2 - W**2 + 1j*W*a)/(1j*W*C0*(Wp**2 - W**2 +1j*W*a))
+        Z2 = ((Ws**2 - W**2)**2 + (W*a)**2)/((W*C0)**2*((Wp**2 - W**2)**2 + (W*a)**2))
         V2 = V0*(Z/(Z+R0))
         phi = math.atan((V0/V2).imag/(V0/V2).real)
         del_t = phi / W * 1e9 
         phifake = 2*math.pi*(i+2e6)*del_t*1e-9
         Zfake = R0/math.sqrt((V0/abs(V2)-math.cos(phifake))**2+math.sin(phifake)**2)
-        with open("demon.csv", "a") as filee:
+        with open("../demon.csv", "a") as filee:
             filee.write("{:.0f}".format(i))
             filee.write(",")
             filee.write("{:.1f}".format(abs(V2)))
@@ -96,5 +99,7 @@ while True:
             filee.write("{:.5f}".format(phifake))
             filee.write(",")
             filee.write("{:.1f}".format(Zfake))
+            filee.write(",")
+            filee.write("{:.1f}".format(Z2))
             filee.write("\n")   
-    '''
+    
