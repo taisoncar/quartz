@@ -55,7 +55,7 @@ while True:
     W = 2*math.pi*f
     Z = (Ws**2 - W**2 + 1j*W*a)/(1j*W*C0*(Wp**2 - W**2 +1j*W*a))
     V2 = V0*(Z/(Z+R0))
-    phi = math.atan((V0/V2).imag/(V0/V2).real)
+    phi = math.atan((V2/V0).imag/(V2/V0).real)
     del_t = phi / W * 1e9 
     print()
     print("========")
@@ -75,13 +75,13 @@ while True:
     
     print("-------------------------------------------------------------------------------------------------------------------")
     
-    for i in range(-200,201):
+    for i in range(-200, 201):
         f = 2e6 + i
         W = 2*math.pi*f
         Z = (Ws**2 - W**2 + 1j*W*a)/(1j*W*C0*(Wp**2 - W**2 +1j*W*a))
         Z2 = ((Ws**2 - W**2)**2 + (W*a)**2)/((W*C0)**2*((Wp**2 - W**2)**2 + (W*a)**2))
         V2 = V0*(Z/(Z+R0))
-        phi = math.atan((V0/V2).imag/(V0/V2).real)
+        phi = math.atan((V2/V0).imag/(V2/V0).real)
         del_t = phi / W * 1e9 
         phifake = 2*math.pi*(i+2e6)*del_t*1e-9
         Zfake = R0/math.sqrt((V0/abs(V2)-math.cos(phifake))**2+math.sin(phifake)**2)

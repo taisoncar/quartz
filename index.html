@@ -175,10 +175,9 @@
 
         // Calculate (V0/V2)
         const V0_c = new Complex(V0, 0);
-        const V0_over_V2 = V0_c.div(V2);
 
-        // phi = math.atan((V0/V2).imag / (V0/V2).real)
-        const phi = Math.atan(V0_over_V2.im / V0_over_V2.re);
+        // phi = math.atan((V2/V0).imag / (V2/V0).real)
+        const phi = Math.atan(V2.div(V0_c).im / V2.div(V0_c).re);
         
         // del_t = phi / W * 1e9 
         const del_t = (phi / W) * 1e9;
